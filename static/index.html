@@ -12,7 +12,9 @@
                 <div class="scroller">
                     <p class="connection" ng-repeat="event in feed">
                         <img ng-src="{{event.media_url}}" alt="tag image" ng-if="event.media_url"/>
-                        {{event.tagger}} tagged {{event.tagged}}.
+                        {{event.tagger}} tagged {{event.tagged}}.  <span ng-if="event.media_url">
+                        <a target="_blank" href="{{event.media_url}}">
+                            View full size image >></a></span>
                     </p>
                 </div>
             </div>
@@ -31,7 +33,9 @@
                     </table>
                 </div>
             </div>
-            <img src="/img/vandevweek.png" alt="Vancouver Dev Week"/>
+            <a href="http://vancouver.devweek.org">
+                <img src="/img/vandevweek.png" alt="Vancouver Dev Week"/>
+            </a>
             <p>November 11-17, 2013</p>
             <h1>Play DevWeek Tag!</h1>
             <p>
@@ -40,14 +44,14 @@
             </p>
             <p>
                 Text their player ID
-                to <span class="number">+1 (651) 800-4844</span> to hook both of you
+                to <span class="number">+1 (604) 256-5585</span> to hook both of you
                 up with points. The player who makes the most connections by Sunday
                 will earn a fabulous prize, furnished by our friends at Google.
             </p>
             <p>
-                To start playing, just send a text to <br/> <span class="number">+1 (651) 800-4844</span>.
+                To start playing, just send a text to <br/> <span class="number">+1 (604) 256-5585</span>.
             </p>
-            <p class="footer">&nbsp;</p>
+            <p class="footer"><a href="http://vancouver.devweek.org">Vancouver Developer Week Home</a></p>
             <div id="twilio">
                 <img class="logo" src="/img/twilio-white.png" alt="Twilio MMS Available in Canada"/>
                 <p>

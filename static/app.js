@@ -7,7 +7,7 @@ function FeedController($scope) {
     $scope.feed = [];
     feedRef.on('child_added', function(snapshot) {
         $scope.$apply(function() {
-            $scope.feed.push(snapshot.val());
+            $scope.feed.unshift(snapshot.val());
         });
     });
 }

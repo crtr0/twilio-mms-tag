@@ -21,4 +21,5 @@ libraries:
   version: "2.5.2"
 
 env_variables:
-  FIREBASE_SECRET: "your firebase secret"
+  FIREBASE_SECRET: "firebase secret"
+  TWILIO_SECRET: "any random string - generate with 'openssl rand -base64 32' or similar and include in Twilio webhook"

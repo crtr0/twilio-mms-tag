@@ -83,6 +83,8 @@ h3 {
 
 p.connection {
     text-align:left;
+    clear:both;
+    line-height:1.5em;
 }
 
 p.connection img {

@@ -2,8 +2,10 @@
 
 # Dependencies
 import webapp2
+import os
 import sys
 import random
+from random import randint
 import types
 from google.appengine.ext import ndb
 
@@ -16,7 +18,7 @@ from firebase import Firebase
 from token_generator import create_token
 
 # Setup Firebase admin-enabled stores
-authtoken = create_token("firebase secret", {}, {"admin":True})
+authtoken = create_token(os.environ["FIREBASE_SECRET"], {}, {"admin":True})
 leaderboardRef = Firebase("https://vdw2.firebaseio.com/leaderboard", authtoken)
 feedRef = Firebase("https://vdw2.firebaseio.com/feed", authtoken)
 
@@ -24,7 +26,7 @@ feedRef = Firebase("https://vdw2.firebaseio.com/feed", authtoken)
 class AppUser(ndb.Model):
     phone = ndb.StringProperty(required=True)
     uid = ndb.StringProperty(required=True)
-    nick = ndb.StringProperty(default="Vancouver Hacker")
+    nick = ndb.StringProperty(default="Vancouver Hacker "+str(randint(1, 9999)))
     total_tags = ndb.IntegerProperty(default=0)
 
 class Tag(ndb.Model):
@@ -111,64 +113,70 @@ def new_user(phone):
 # Create a webapp class
 class SmsHandler(webapp2.RequestHandler):
     def post(self):
-        # Get POST data sent from Twilio
-        phone = self.request.get("From")
-        body = self.request.get("Body")
-        media_url = self.request.get("MediaUrl")
+        if self.request.get('secret') == os.environ["TWILIO_SECRET"]:
+            # Get POST data sent from Twilio
+            phone = self.request.get("From")
+            body = self.request.get("Body")
+            media_url = self.request.get("MediaUrl")
 
-        # Set up XML response for Twilio
-        response_message = "<Response><Message>{0}</Message></Response>"
-        msg = ""
+            # Set up XML response for Twilio
+            response_message = "<Response><Message>{0}</Message></Response>"
+            msg = ""
 
-        # Get the user based on their phone number
-        user = AppUser.query(AppUser.phone == phone).get()
+            # Get the user based on their phone number
+            user = AppUser.query(AppUser.phone == phone).get()
 
-        # The user is new to the system, try and add them
-        if not user:
-            msg = new_user(phone)
+            # The user is new to the system, try and add them
+            if not user:
+                msg = new_user(phone)
 
-        # Get current number of tags
-        elif body.upper().strip().startswith("COUNT"):
-            msg = count_tags(user)
+            # Get current number of tags
+            elif body.upper().strip().startswith("COUNT"):
+                msg = count_tags(user)
 
-        # Tag a user
-        elif body.upper().strip().startswith("TAG"):
-            user_input = body.strip()[4:]
-            if user_input.upper().startswith("HELP"):
-                msg = "Text \"TAG [another player's ID]\" and an optional picture to check in and score points. Introduce yourself to other devs to get their ID :)"
-            else:
-                msg = tag_person(user, user_input, media_url)
-
-        # Change nickname
-        elif body.upper().strip().startswith("NICK"):
-            user_input = body.strip()[5:]
-            if user_input.upper().startswith("HELP"):
-                msg = "Text \"NICK [a new nickname]\" to change the nickname that is displayed for you."
-            else:
-                new_nick = body.strip()[5:]
-                if len(new_nick) > 0:
-                    user.nick = new_nick
-                    user.put()
-                    msg = "Word. Your new nickname is {0}.".format(user.nick)
+            # Tag a user
+            elif body.upper().strip().startswith("TAG"):
+                user_input = body.strip()[4:]
+                if user_input.upper().startswith("HELP"):
+                    msg = "Text \"TAG [another player's ID]\" and an optional picture to check in and score points. Introduce yourself to other devs to get their ID :)"
                 else:
-                    msg = "Please provide a nickname."
+                    msg = tag_person(user, user_input, media_url)
 
-        # Unsubscribe
-        elif body.upper().strip().startswith("STOP"):
-            user.key.delete()
-            msg = "You are now unsubscribed. Text this number again to re-subscribe."
+            # Change nickname
+            elif body.upper().strip().startswith("NICK"):
+                user_input = body.strip()[5:]
+                if user_input.upper().startswith("HELP"):
+                    msg = "Text \"NICK [a new nickname]\" to change the nickname that is displayed for you."
+                else:
+                    new_nick = body.strip()[5:]
+                    if len(new_nick) > 0:
+                        user.nick = new_nick
+                        user.put()
+                        msg = "Word. Your new nickname is {0}.".format(user.nick)
+                    else:
+                        msg = "Please provide a nickname."
 
-        # Help
-        elif body.upper().strip().startswith("HELP"):
-            msg = "::VanDevWeek Tag:: Your player ID is: {0}. Nickname: {1}. Commands are HELP, NICK, COUNT, and TAG. Text \"[command name] HELP\" for command-specific help. Text STOP to unsubscribe.".format(user.uid, user.nick)
+            # Unsubscribe
+            elif body.upper().strip().startswith("STOP"):
+                user.key.delete()
+                msg = "You are now unsubscribed. Text this number again to re-subscribe."
 
-        # We don't know what they're trying to do
+            # Help
+            elif body.upper().strip().startswith("HELP"):
+                msg = "::VanDevWeek Tag:: Your player ID is: {0}. Nickname: {1}. Commands are HELP, NICK, COUNT, and TAG. Text \"[command name] HELP\" for command-specific help. Text STOP to unsubscribe.".format(user.uid, user.nick)
+
+            # We don't know what they're trying to do
+            else:
+                msg = "Hi there {0}! Your ID is: {1}. Text HELP for commands and options.".format(user.nick, user.uid)
+
+            # Render XML response to Twilio
+            self.response.headers["Content-Type"] = "text/xml"
+            self.response.write(response_message.format(msg))
         else:
-            msg = "Hi there {0}! Your ID is: {1}. Text HELP for commands and options.".format(user.nick, user.uid)
-
-        # Render XML response to Twilio
-        self.response.headers["Content-Type"] = "text/xml"
-        self.response.write(response_message.format(msg))
+            # Render XML response to Twilio
+            self.response.headers["Content-Type"] = "text/plain"
+            self.response.status_int = 403
+            self.response.write("You're not Twilio. Get lost.")
 
 # Create URI handlers
 app = webapp2.WSGIApplication([
