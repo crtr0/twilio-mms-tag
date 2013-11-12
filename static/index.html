@@ -11,7 +11,9 @@
                 <h3>Connections</h3>
                 <div class="scroller">
                     <p class="connection" ng-repeat="event in feed">
-                        <img ng-src="{{event.media_url}}" alt="tag image" ng-if="event.media_url"/>
+                        <a target="_blank" href="{{event.media_url}}" ng-if="event.media_url">
+                            <img ng-src="{{event.media_url}}" alt="tag image"/>
+                        </a>
                         {{event.tagger}} tagged {{event.tagged}}.  <span ng-if="event.media_url">
                         <a target="_blank" href="{{event.media_url}}">
                             View full size image >></a></span>
