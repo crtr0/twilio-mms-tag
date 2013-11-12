@@ -1,0 +1,24 @@
+application: vdwtag2
+version: 1
+runtime: python27
+api_version: 1
+threadsafe: yes
+
+handlers:
+- url: /(.*\.(gif|png|jpg|html|js|css))
+  static_files: static/\1
+  upload: static/(.*\.(gif|png|jpg|html|js|css))
+
+- url: /
+  static_files: static/index.html
+  upload: static/index.html
+
+- url: .*
+  script: main.app
+
+libraries:
+- name: webapp2
+  version: "2.5.2"
+
+env_variables:
+  FIREBASE_SECRET: "your firebase secret"

@@ -1,64 +1,176 @@
 #!/usr/bin/env python
-#
-# Copyright 2007 Google Inc.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-#
+
+# Dependencies
 import webapp2
 import sys
-sys.path.insert(0, 'libs')
-from firebase import Firebase
 import random
 import types
+from google.appengine.ext import ndb
 
+# Apparently this is the way you get python to resolve module directories?
+# Will need to Google this later...
+sys.path.insert(0, "libs")
 
+# Use Firebase for the realtime components of the app (leaderboard, activity feed)
+from firebase import Firebase
+from token_generator import create_token
+
+# Setup Firebase admin-enabled stores
+authtoken = create_token("firebase secret", {}, {"admin":True})
+leaderboardRef = Firebase("https://vdw2.firebaseio.com/leaderboard", authtoken)
+feedRef = Firebase("https://vdw2.firebaseio.com/feed", authtoken)
+
+# Use GAE data store as the primary app data store
+class AppUser(ndb.Model):
+    phone = ndb.StringProperty(required=True)
+    uid = ndb.StringProperty(required=True)
+    nick = ndb.StringProperty(default="Vancouver Hacker")
+    total_tags = ndb.IntegerProperty(default=0)
+
+class Tag(ndb.Model):
+    tagger = ndb.StringProperty(required=True)
+    tagged_person = ndb.StringProperty(required=True)
+    media_url = ndb.StringProperty()
+
+# Return a JSON-serializeable list from an AppUser query object
+def json_serializeable(users):
+    result = []
+    for user in users:
+        result.append({
+            "nick":user.nick,
+            "total_tags":user.total_tags
+        })
+    return result
+
+# Return a text count of the number of people a user has met
+def count_tags(user):
+    # Get current count for user
+    met_people = user.total_tags
+    noun = "person" if met_people == 1 else "people"
+
+    # Return current tag count
+    return "You have met {0} {1} so far.".format(met_people, noun)
+
+# Handle a tag request
+def tag_person(current_tagger, tagged_person_id, media_url=None):
+    if current_tagger.uid == tagged_person_id:
+        return "lolwut? You can't tag yourself!"
+
+    tagged_person = AppUser.query(AppUser.uid == tagged_person_id).get()
+    if not tagged_person:
+        return "No other player found by the given ID."
+    else:
+        previousTag = Tag.query(Tag.tagger == current_tagger.uid, Tag.tagged_person == tagged_person_id).get()
+        if previousTag:
+            return "You have already met this person!"
+        else:
+            # Create a new tag
+            tag = Tag(tagger=current_tagger.uid, tagged_person=tagged_person.uid, media_url=media_url)
+            tag.put()
+
+            # Update relevant users
+            current_tagger.total_tags = current_tagger.total_tags+1
+            current_tagger.put()
+            tagged_person.total_tags = tagged_person.total_tags+1
+            tagged_person.put()
+
+            # Push relevant Firebase updates
+            feedRef.push({
+                "tagger":current_tagger.nick,
+                "tagged":tagged_person.nick,
+                "media_url":media_url
+            })
+
+            # generate leaderboard
+            leaders = AppUser.query().order(-AppUser.total_tags).fetch(20)
+            leaderboardRef.push({
+                "leaders":json_serializeable(leaders)
+            })
+
+            # Return current tag count
+            return "You have checked in with {0}!".format(tagged_person.nick)
+
+# Create a new app user
+def new_user(phone):
+    # Create a unique 4 character ID for the user - keep trying until
+    # we get a unique one
+    uid = ""
+    done = False
+    while not done:
+        uid = hex(random.randint(0,65535))[2:]
+        existingUser = AppUser.query(AppUser.uid == uid).get()
+        done = not existingUser
+
+    # Create new user
+    user = AppUser(phone=phone, uid=uid)
+    user.put()
+
+    # BAMF!
+    return "Thanks for signing up for VanDevWeek Tag! Your ID is: {0}. Text HELP for commands and options.".format(uid)
+
+# Create a webapp class
 class SmsHandler(webapp2.RequestHandler):
     def post(self):
-    	phone = self.request.get('From')
-    	body = self.request.get('Body')
-    	users = usersRef.get()
-    	# The user is trying to sign-up
-    	if body.upper().strip() == 'SIGNUP':
-    		if type(users) is types.NoneType:
-    			users = []
-    		found = False
-    		# loop through users and see if this is a new person
-    		for k, v in users.iteritems():
-    			print v
-    			if v[u'phone'] == phone:
-    				found = True
-    				msg = "<Response>You're already signed up! Your code is: " + v[u'uid'] + "</Response>" 
-    		# if they're new, give them a UID and store it
-    		if not found:
-    			uid = hex(random.randint(0,65535))
-    			usersRef.push({'phone': phone, 'uid': uid})
-    			msg = "<Response>Thanks for signing-up! Your code is: " + uid + "</Response>"
+        # Get POST data sent from Twilio
+        phone = self.request.get("From")
+        body = self.request.get("Body")
+        media_url = self.request.get("MediaUrl")
 
-    	# The user is trying to tag
-    	elif body.upper().strip().startswith('TAG'):
-    		# store the SMS message
-    		messagesRef.push({'body': self.request.get('Body')})
-      		msg = "Thanks! We've recorded your tag"
-    	# We don't know what they're trying to do
-    	else:
-    		msg = "<Response>Sorry, I didn't understand that command. You can either SIGNUP or TAG.</Response>"
+        # Set up XML response for Twilio
+        response_message = "<Response><Message>{0}</Message></Response>"
+        msg = ""
 
-    	self.response.write(msg)
+        # Get the user based on their phone number
+        user = AppUser.query(AppUser.phone == phone).get()
 
+        # The user is new to the system, try and add them
+        if not user:
+            msg = new_user(phone)
 
-usersRef = Firebase('https://vdw.firebaseio.com/users')
-messagesRef = Firebase('https://vdw.firebaseio.com/messages', auth_token='rkli7ILTCdMZNFpaZVkoVFWz5FSP08pCKdNjyY2A')
+        # Get current number of tags
+        elif body.upper().strip().startswith("COUNT"):
+            msg = count_tags(user)
 
+        # Tag a user
+        elif body.upper().strip().startswith("TAG"):
+            user_input = body.strip()[4:]
+            if user_input.upper().startswith("HELP"):
+                msg = "Text \"TAG [another player's ID]\" and an optional picture to check in and score points. Introduce yourself to other devs to get their ID :)"
+            else:
+                msg = tag_person(user, user_input, media_url)
+
+        # Change nickname
+        elif body.upper().strip().startswith("NICK"):
+            user_input = body.strip()[5:]
+            if user_input.upper().startswith("HELP"):
+                msg = "Text \"NICK [a new nickname]\" to change the nickname that is displayed for you."
+            else:
+                new_nick = body.strip()[5:]
+                if len(new_nick) > 0:
+                    user.nick = new_nick
+                    user.put()
+                    msg = "Word. Your new nickname is {0}.".format(user.nick)
+                else:
+                    msg = "Please provide a nickname."
+
+        # Unsubscribe
+        elif body.upper().strip().startswith("STOP"):
+            user.key.delete()
+            msg = "You are now unsubscribed. Text this number again to re-subscribe."
+
+        # Help
+        elif body.upper().strip().startswith("HELP"):
+            msg = "::VanDevWeek Tag:: Your player ID is: {0}. Nickname: {1}. Commands are HELP, NICK, COUNT, and TAG. Text \"[command name] HELP\" for command-specific help. Text STOP to unsubscribe.".format(user.uid, user.nick)
+
+        # We don't know what they're trying to do
+        else:
+            msg = "Hi there {0}! Your ID is: {1}. Text HELP for commands and options.".format(user.nick, user.uid)
+
+        # Render XML response to Twilio
+        self.response.headers["Content-Type"] = "text/xml"
+        self.response.write(response_message.format(msg))
+
+# Create URI handlers
 app = webapp2.WSGIApplication([
-    ('/sms', SmsHandler)
+    ("/sms", SmsHandler)
 ], debug=True)
