@@ -1,0 +1,75 @@
+<!doctype html>
+<html ng-app>
+<head>
+    <title>Vancouver Developer Week Tag</title>
+    <link rel="stylesheet" type="text/css" href="/app.css">
+</head>
+<body>
+    <div id="content">
+        <div id="">
+            <div id="updates" class="sidebar" ng-controller="FeedController">
+                <h3>Connections</h3>
+                <div class="scroller">
+                    <p class="connection" ng-repeat="event in feed">
+                        <img ng-src="{{event.media_url}}" alt="tag image" ng-if="event.media_url"/>
+                        {{event.tagger}} tagged {{event.tagged}}.
+                    </p>
+                </div>
+            </div>
+            <div id="leaderboard" class="sidebar" ng-controller="LeaderboardController">
+                <h3>Leaderboard</h3>
+                <div class="scroller">
+                    <table>
+                        <tr>
+                            <th class="name">Name</th>
+                            <th>Connections</th>
+                        </tr>
+                        <tr ng-repeat="leader in leaders">
+                            <td class="name">{{leader.nick}}</td>
+                            <td>{{leader.total_tags}}</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+            <img src="/img/vandevweek.png" alt="Vancouver Dev Week"/>
+            <p>November 11-17, 2013</p>
+            <h1>Play DevWeek Tag!</h1>
+            <p>
+                We want you to meet people in Vancouver this week! If you meet someone
+                new, ask them if they're playing DevWeek Tag.  
+            </p>
+            <p>
+                Text their player ID
+                to <span class="number">+1 (651) 800-4844</span> to hook both of you
+                up with points. The player who makes the most connections by Friday
+                will earn a fabulous prize, furnished by our friends at Google.
+            </p>
+            <p>
+                To start playing, just send a text to <br/> <span class="number">+1 (651) 800-4844</span>.
+            </p>
+            <p class="footer">&nbsp;</p>
+            <div id="twilio">
+                <img class="logo" src="/img/twilio-white.png" alt="Twilio MMS Available in Canada"/>
+                <p>
+                    Hey! Did you know that in Canada only, you can now use Twilio
+                    to <a href="https://www.twilio.com/mms">send and receive 
+                    picture messages via MMS</a>? It's true! Send customers a
+                    picture of new items, receive pictures from mobile workers,
+                    or issue tickets to an event without a smartphone app to install.
+                </p>
+                <p>
+                    A picture really is worth 1,000 words - start hacking with
+                    <a href="https://www.twilio.com/mms">Twilio picture messaging</a>
+                    on Canadian numbers today!
+                </p>
+                <p>
+                    Twilio is a proud sponsor of Vancouver Developer Week 2013.
+                </p>
+            </div>
+        </div>
+    </div>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.0/angular.min.js"></script>
+    <script src="//cdn.firebase.com/v0/firebase.js"></script>
+    <script src="/app.js"></script>
+</body>
+</html>

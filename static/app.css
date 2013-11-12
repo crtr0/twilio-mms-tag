@@ -1,0 +1,112 @@
+body {
+    background: url(img/vandevweek-header.jpg) no-repeat center center fixed; 
+    background-size: cover;
+}
+
+a, a:visited {
+    color:#cdcdcd;
+}
+
+h1 {
+    font-size:24px;
+    font-weight:bold;
+    font-style:italic;
+    margin:0;
+    padding:0;
+}
+
+h3 {
+    margin:0;
+    padding:0;
+    font-size:18px;
+    color:#3F73A1;
+}
+
+#content {
+    color:#fff;
+    font-family:Helvetica,sans-serif;
+    margin: 20px auto;
+    padding:20px;
+    width:960px;
+    text-align:center;
+    border-radius:10px;
+    background-color:#282F37;
+    opacity:0.9;
+}
+
+#content p {
+    font-size:14px;
+}
+
+#content .footer {
+    font-size:12px;
+    margin-top:40px;
+}
+
+.number {
+    font-weight:bold;
+    color:yellow;
+}
+
+.sidebar {
+    width:320px;
+    height:500px;
+    background-color:#000;
+    border-radius: 10px;
+    padding:10px;
+}
+
+.sidebar .scroller {
+    overflow:scroll;
+}
+
+#leaderboard {
+    float:right;
+    margin-left:10px;
+}
+
+#updates {
+    float:left;
+    margin-right:10px;
+}
+
+#twilio {
+    border-top:1px dotted;
+    text-align:left;
+    margin-top:20px;
+}
+
+#twilio img.logo {
+    margin:20px 20px 20px 0;
+    float:left;
+}
+
+p.connection {
+    text-align:left;
+}
+
+p.connection img {
+    float:left;
+    height:50px;
+    margin:0 10px 10px 0;
+}
+
+#leaderboard table {
+    width:100%;
+    border-collapse:collapse;
+}
+
+#leaderboard th {
+    padding:10px;
+    border-bottom:1px solid;
+    margin:0;
+    color:#cdcdcd;
+}
+
+#leaderboard td {
+    padding:10px;
+}
+
+#leaderboard .name {
+    text-align:left;
+}
