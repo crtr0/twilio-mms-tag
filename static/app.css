@@ -139,6 +139,7 @@ p.connection img {
 }
 
 .poweredBy {
+    margin-top:50px;
     text-align:center;
     background-color:#cdcdcd;
     border-radius:10px;
