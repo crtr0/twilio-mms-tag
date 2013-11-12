@@ -19,14 +19,15 @@ from token_generator import create_token
 
 # Setup Firebase admin-enabled stores
 authtoken = create_token(os.environ["FIREBASE_SECRET"], {}, {"admin":True})
-leaderboardRef = Firebase("https://vdw2.firebaseio.com/leaderboard", authtoken)
-feedRef = Firebase("https://vdw2.firebaseio.com/feed", authtoken)
+leaderboardRef = Firebase("https://vdw.firebaseio.com/leaderboard", authtoken)
+feedRef = Firebase("https://vdw.firebaseio.com/feed", authtoken)
 
 # Use GAE data store as the primary app data store
 class AppUser(ndb.Model):
     phone = ndb.StringProperty(required=True)
     uid = ndb.StringProperty(required=True)
     nick = ndb.StringProperty(default="Vancouver Hacker "+str(randint(1, 9999)))
+    email = ndb.StringProperty(default="none provided")
     total_tags = ndb.IntegerProperty(default=0)
 
 class Tag(ndb.Model):
@@ -117,18 +118,23 @@ class SmsHandler(webapp2.RequestHandler):
             # Get POST data sent from Twilio
             phone = self.request.get("From")
             body = self.request.get("Body")
-            media_url = self.request.get("MediaUrl")
+            media_url = self.request.get("MediaUrl0")
+            print(self.request)
 
             # Set up XML response for Twilio
             response_message = "<Response><Message>{0}</Message></Response>"
             msg = ""
 
+            new_phone = phone
+            if not new_phone.startswith("+1"):
+                new_phone = "+1"+new_phone
+
             # Get the user based on their phone number
-            user = AppUser.query(AppUser.phone == phone).get()
+            user = AppUser.query(AppUser.phone == new_phone).get()
 
             # The user is new to the system, try and add them
             if not user:
-                msg = new_user(phone)
+                msg = new_user(new_phone)
 
             # Get current number of tags
             elif body.upper().strip().startswith("COUNT"):
@@ -156,6 +162,20 @@ class SmsHandler(webapp2.RequestHandler):
                     else:
                         msg = "Please provide a nickname."
 
+            # Change email
+            elif body.upper().strip().startswith("EMAIL"):
+                user_input = body.strip()[6:]
+                if user_input.upper().startswith("HELP"):
+                    msg = "Text \"EMAIL [your e-mail]\" to change the e-mail address associated with you. Allows your tags to send you e-mail."
+                else:
+                    new_email = body.strip()[6:]
+                    if len(new_email) > 0:
+                        user.email = new_email
+                        user.put()
+                        msg = "Gotcha. Your e-mail is {0}.".format(user.email)
+                    else:
+                        msg = "Please provide an e-mail address."
+
             # Unsubscribe
             elif body.upper().strip().startswith("STOP"):
                 user.key.delete()
@@ -163,7 +183,7 @@ class SmsHandler(webapp2.RequestHandler):
 
             # Help
             elif body.upper().strip().startswith("HELP"):
-                msg = "::VanDevWeek Tag:: Your player ID is: {0}. Nickname: {1}. Commands are HELP, NICK, COUNT, and TAG. Text \"[command name] HELP\" for command-specific help. Text STOP to unsubscribe.".format(user.uid, user.nick)
+                msg = "::VanDevWeek Tag:: Your player ID is: {0}. Nickname: {1}. Commands are HELP, NICK, EMAIL, COUNT, and TAG. Text \"[command name] HELP\" for command-specific help. Text STOP to unsubscribe.".format(user.uid, user.nick)
 
             # We don't know what they're trying to do
             else:

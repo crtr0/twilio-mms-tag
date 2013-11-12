@@ -39,8 +39,9 @@ h3 {
 }
 
 #content .footer {
+    text-align:center;
     font-size:12px;
-    margin-top:40px;
+    margin-top:10px;
 }
 
 .number {
@@ -57,6 +58,7 @@ h3 {
 }
 
 .sidebar .scroller {
+    height:450px;
     overflow:scroll;
 }
 
@@ -77,7 +79,7 @@ h3 {
 }
 
 #twilio img.logo {
-    margin:20px 20px 20px 0;
+    margin:0 20px 20px 0;
     float:left;
 }
 
@@ -111,4 +113,37 @@ p.connection img {
 
 #leaderboard .name {
     text-align:left;
+}
+
+#lightboxImage {
+    height:500px;
+    border:2px #fff solid;
+}
+
+.lightbox {
+    position:fixed;
+    top:0;
+    left:0;
+    width:100%;
+    height:100%;
+    background:rgba(0, 0, 0, .8);
+}
+
+.lightbox_table {
+    width:100%;
+    height:100%;
+}
+
+.lightbox_table_cell {
+    vertical-align:middle;
+}
+
+.poweredBy {
+    text-align:center;
+    background-color:#cdcdcd;
+    border-radius:10px;
+}
+
+.poweredBy img {
+    margin:15px;
 }

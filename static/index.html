@@ -11,12 +11,10 @@
                 <h3>Connections</h3>
                 <div class="scroller">
                     <p class="connection" ng-repeat="event in feed">
-                        <a target="_blank" href="{{event.media_url}}" ng-if="event.media_url">
+                        <a href="#" ng-click="showLightbox(event.media_url)" ng-if="event.media_url">
                             <img ng-src="{{event.media_url}}" alt="tag image"/>
                         </a>
-                        {{event.tagger}} tagged {{event.tagged}}.  <span ng-if="event.media_url">
-                        <a target="_blank" href="{{event.media_url}}">
-                            View full size image >></a></span>
+                        {{event.tagger}} tagged {{event.tagged}}.
                     </p>
                 </div>
             </div>
@@ -41,20 +39,17 @@
             <p>November 11-17, 2013</p>
             <h1>Play DevWeek Tag!</h1>
             <p>
-                We want you to meet people in Vancouver this week! If you meet someone
-                new, ask them if they're playing DevWeek Tag.  
+                Introduce yourself
+                to someone new and ask if they are playing DevWeek tag.  If they are: 
             </p>
-            <p>
-                Text their player ID **and a picture, if you're in Canada**
-                to <span class="number">+1 (604) 256-5585</span> to hook both of you
-                up with points. The player who makes the most connections by Sunday
-                will earn a fabulous prize, furnished by our friends at Google.
-            </p>
-            <p>
-                To start playing, just send a text to <br/> <span class="number">+1 (604) 256-5585</span>.
-            </p>
-            <p class="footer"><a href="http://vancouver.devweek.org">Vancouver Developer Week Home</a></p>
+            <p>(1) Text their unique code to <br/> <span class="number">+1 (604) 256-5585</span></p>
+            <p>(2) If you have a Canadian mobile phone, take a picture of both of you to include it in your message!</p>
+            <p>(3) Every connection you make earns points for both you and your new friend.</p>
+            <p>(4) The player with the most points by the end of VDW will earn a fabulous prize, furnished by our friends at Google Cloud.</p>
             <div id="twilio">
+                <p class="footer">
+                    <a href="http://vancouver.devweek.org">Vancouver Developer Week</a> Tag is powered by these amazing sponsors:
+                </p>
                 <img class="logo" src="/img/twilio-white.png" alt="Twilio MMS Available in Canada"/>
                 <p>
                     Hey! Did you know that in Canada only, you can now use Twilio
@@ -71,8 +66,26 @@
                 <p>
                     Twilio is a proud sponsor of Vancouver Developer Week 2013.
                 </p>
+                <p class="poweredBy">
+                    <a href="http://www.firebase.com">
+                        <img src="/img/firebase.png" alt="Powered By Firebase"/>
+                    </a>
+                    <a href="http://www.https://cloud.google.com">
+                        <img src="/img/google-cloud.png" alt="Powered By Google Cloud"/>
+                    </a>
+                </p>
             </div>
         </div>
+    </div>
+    <div id="lightbox" style="display:none;" class="lightbox"
+        onclick="document.getElementById('lightbox').style.display='none';">
+        <table class="lightbox_table">
+            <tr>
+                <td class="lightbox_table_cell" align="center">
+                    <img id="lightboxImage" src="" alt="lightbox image"/>
+                </td>
+            </tr>
+        </table>
     </div>
     <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.0/angular.min.js"></script>
     <script src="//cdn.firebase.com/v0/firebase.js"></script>
