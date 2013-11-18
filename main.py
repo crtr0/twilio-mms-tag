@@ -26,7 +26,7 @@ feedRef = Firebase("https://vdw.firebaseio.com/feed", authtoken)
 class AppUser(ndb.Model):
     phone = ndb.StringProperty(required=True)
     uid = ndb.StringProperty(required=True)
-    nick = ndb.StringProperty(default="Vancouver Hacker "+str(randint(1, 9999)))
+    nick = ndb.StringProperty(default="A Vancouver Hacker")
     email = ndb.StringProperty(default="none provided")
     total_tags = ndb.IntegerProperty(default=0)
 
