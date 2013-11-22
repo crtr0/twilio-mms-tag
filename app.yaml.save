@@ -23,3 +23,6 @@ libraries:
 env_variables:
   FIREBASE_SECRET: "firebase secret"
   TWILIO_SECRET: "any random string - generate with 'openssl rand -base64 32' or similar and include in Twilio webhook"
+  ADMIN_PASSWORD: "a super secret password, used to execute admin functions via POST"
+  TWILIO_ACCOUNT_SID: "your Twilio Account SID"
+  TWILIO_AUTH_TOKEN: "your Twilio auth token"

@@ -7,7 +7,10 @@ import sys
 import random
 from random import randint
 import types
+from twilio import twiml
+from twilio.rest import TwilioRestClient
 from google.appengine.ext import ndb
+from google.appengine.api import mail
 
 # Apparently this is the way you get python to resolve module directories?
 # Will need to Google this later...
@@ -183,7 +186,43 @@ class SmsHandler(webapp2.RequestHandler):
 
             # Help
             elif body.upper().strip().startswith("HELP"):
-                msg = "::VanDevWeek Tag:: Your player ID is: {0}. Nickname: {1}. Commands are HELP, NICK, EMAIL, COUNT, and TAG. Text \"[command name] HELP\" for command-specific help. Text STOP to unsubscribe.".format(user.uid, user.nick)
+                msg = "::VanDevWeek Tag:: Your player ID is: {0}. Nickname: {1}. Commands are HELP, NICK, EMAIL, COUNT, CONTACTS, and TAG. Text \"[command name] HELP\" for command-specific help. Text STOP to unsubscribe.".format(user.uid, user.nick)
+
+            # Ship contact list
+            elif body.upper().strip().startswith("CONTACTS"):
+                if not user.email or user.email == 'none provided':
+                    msg = "Set your e-mail address with the EMAIL command first, then we can send you your contacts."
+                else:
+                    tags = Tag.query(ndb.OR(Tag.tagger == user.uid, Tag.tagged_person == user.uid)).fetch()
+
+                    # Get the UIDs of tagged persons... should have done a 
+                    # relation here, but live and learn...
+                    uids = []
+                    for tag in tags:
+                        other_uid = tag.tagger
+                        if (other_uid == user.uid):
+                            other_uid = tag.tagged_person
+                        uids.append(other_uid)
+
+                    # Grab all people by those uids and craft an e-mail...
+                    email_body = 'Thanks for attending Vancouver DevWeek!  Here are all the people you met:\n\n'
+                    for uid in uids:
+                        contact = AppUser.query(AppUser.uid == uid).get()
+                        email_body = email_body+contact.nick+'\nE-Mail: '+contact.email+'\n\n'
+
+                    email_body = email_body+'\nThanks for being awesome!\n--Your pals at Vancouver DevWeek'
+
+                    # send le e-mail
+                    message = mail.EmailMessage(sender="Vancouver DevWeek Team <kwhinnery@twilio.com>",
+                            subject="Your Requested Contact List")
+
+                    message.to = user.email
+                    message.body = email_body
+                    message.send()
+
+                    # Send text back
+                    msg = 'We are now emailing you a list of your connections. Learn more about Twilio MMS at twilio.com/mms and view the source for DevTag on Github bit.ly/devtag-mms'
+
 
             # We don't know what they're trying to do
             else:
@@ -198,7 +237,32 @@ class SmsHandler(webapp2.RequestHandler):
             self.response.status_int = 403
             self.response.write("You're not Twilio. Get lost.")
 
+# Super dirty admin controller. Sorry Tim Berners-Lee :'(
+class AdminHandler(webapp2.RequestHandler):
+    def post(self):
+        self.response.headers["Content-Type"] = "text/plain"
+        if self.request.get('password') == os.environ["ADMIN_PASSWORD"]:
+
+            # Create an authenticated Twilio REST API client
+            client = TwilioRestClient(os.environ["TWILIO_ACCOUNT_SID"], os.environ["TWILIO_AUTH_TOKEN"])
+
+            action = self.request.get('action')
+            if action == 'pingUsers':
+                users = AppUser.query().fetch()
+                for user in users:
+                    rv = client.sms.messages.create(to=user.phone,
+                                                    from_="+16042565585",
+                                                    body="Thanks for coming to DevWeek! Allow your new friends to contact you via e-mail by setting yours via the \"EMAIL\" command. To get your contacts, use \"CONTACTS\".")
+                    self.response.write(rv.sid+'\n');
+            else:
+                self.response.write("Command not recognized")
+        else:
+            self.response.status_int = 403
+            self.response.write("You're not an admin. Get lost.")
+
+
 # Create URI handlers
 app = webapp2.WSGIApplication([
-    ("/sms", SmsHandler)
+    ("/sms", SmsHandler),
+    ("/admin", AdminHandler)
 ], debug=True)
